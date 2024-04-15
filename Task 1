@@ -1,0 +1,24 @@
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, lit
+
+
+spark = SparkSession.builder.appName("ProductCategoryPairs").getOrCreate()
+data = [("Продукт1", ["Категория1", "Категория2"]),
+        ("Продукт2", ["Категория1"]),
+        ("Продукт3", []),
+        ("Продукт4", ["Категория2"])]
+
+df = spark.createDataFrame(data, ["Product", "Categories"])
+
+df_exploded = df.select(col("Product"), col("Categories")).explode("Categories", "Category")
+
+product_category_pairs = df_exploded.select(col("Product"), col("Category"))
+
+products_without_categories = df.filter(col("Categories").isNull() | (col("Categories") == lit([])))
+
+print("Пары 'Имя продукта - Имя категории':")
+product_category_pairs.show()
+
+print("Продукты без категорий:")
+products_without_categories.select("Product").show()
+spark.stop()
